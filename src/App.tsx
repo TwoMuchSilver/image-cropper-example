@@ -1,141 +1,221 @@
 // src/App.tsx
-import React, { useState, useCallback } from 'react';
-import Cropper, { type Area } from 'react-easy-crop';
-import { getCroppedImg } from './canvasUtils';
+import React, { useState } from 'react';
+import { TEMPLATES } from './templates';
+import { type Template, type GridSlotData } from './types';
+import { EditorModal } from './components/GridEditor/EditorModal';
+import { SlotItem } from './components/GridEditor/SlotItem';
+import { ResultGrid } from './components/GridViewer/ResultGrid';
+import { GalleryModal } from './components/GridViewer/GalleryModal';
 import './App.css';
 
-// 비율 옵션 정의
-const aspectRatios = [
-  { value: 1, label: '1:1', width: 40, height: 40 },
-  { value: 4 / 5, label: '4:5', width: 32, height: 40 },
-  { value: 16 / 9, label: '16:9', width: 40, height: 22.5 },
-];
+type AppMode = 'template-select' | 'editor' | 'viewer';
 
 const App = () => {
-  // 1. 상태 관리
-  const [imageSrc, setImageSrc] = useState<string | null>(null); // 업로드된 이미지 소스
-  const [crop, setCrop] = useState({ x: 0, y: 0 });              // 크롭 위치 (x, y)
-  const [zoom, setZoom] = useState(1);                          // 확대 배율
-  const [aspect, setAspect] = useState(4 / 5);                  // 크롭 비율
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null); // 자를 영역 좌표(px)
-  const [croppedImage, setCroppedImage] = useState<string | null>(null); // 최종 결과물 이미지 URL
+  // 현재 모드
+  const [mode, setMode] = useState<AppMode>('template-select');
+  
+  // 선택된 템플릿
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  
+  // 각 슬롯의 데이터
+  const [slotsData, setSlotsData] = useState<GridSlotData[]>([]);
+  
+  // 편집 중인 슬롯 인덱스
+  const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
+  
+  // 갤러리 모달 상태
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
-  // 2. 파일 업로드 핸들러
-  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        setImageSrc(reader.result as string);
-      };
+  // 템플릿 선택 핸들러
+  const handleTemplateSelect = (template: Template) => {
+    setSelectedTemplate(template);
+    // 템플릿의 슬롯 개수만큼 빈 데이터 초기화
+    setSlotsData(
+      template.slots.map((slot) => ({
+        id: slot.id,
+        imageSrc: null,
+        crop: { x: 0, y: 0 },
+        zoom: 1,
+      }))
+    );
+    setMode('editor');
+  };
+
+  // 슬롯 클릭 핸들러 (편집 모달 열기)
+  const handleSlotClick = (index: number) => {
+    setEditingSlotIndex(index);
+  };
+
+  // 슬롯 데이터 저장 핸들러
+  const handleSlotSave = (updatedSlot: GridSlotData) => {
+    if (editingSlotIndex !== null) {
+      const newSlotsData = [...slotsData];
+      newSlotsData[editingSlotIndex] = updatedSlot;
+      setSlotsData(newSlotsData);
+      setEditingSlotIndex(null);
     }
   };
 
-  // 3. 크롭 영역 계산 완료 시 호출 (사용자가 움직일 때마다 발생)
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  // 4. 최종 결과물 만들기 버튼 클릭
-  const handleSave = async () => {
-    try {
-      if (imageSrc && croppedAreaPixels) {
-        const result = await getCroppedImg(imageSrc, croppedAreaPixels);
-        setCroppedImage(result);
-      }
-    } catch (e) {
-      console.error("이미지 생성 실패:", e);
-    }
+  // 편집 모달 닫기
+  const handleModalCancel = () => {
+    setEditingSlotIndex(null);
   };
+
+  // 뷰어 모드로 전환
+  const handlePreview = () => {
+    setMode('viewer');
+  };
+
+  // 편집 모드로 돌아가기
+  const handleBackToEdit = () => {
+    setMode('editor');
+  };
+
+  // 템플릿 선택으로 돌아가기
+  const handleReset = () => {
+    setMode('template-select');
+    setSelectedTemplate(null);
+    setSlotsData([]);
+  };
+
+  // 갤러리 열기
+  const handleImageClick = (index: number) => {
+    setGalleryIndex(index);
+  };
+
+  // 갤러리 닫기
+  const handleGalleryClose = () => {
+    setGalleryIndex(null);
+  };
+
+  // 모든 슬롯에 이미지가 있는지 확인
+  const allSlotsFilled = slotsData.every((slot) => slot.imageSrc !== null);
 
   return (
     <div className="container">
-      {/* 이미지 선택 전 */}
-      {!imageSrc && (
-        <div className="upload-section">
-          <h2>사진 편집기</h2>
-          <p>사진을 선택하여 편집을 시작하세요.</p>
-          <label className="upload-label">
-            사진 선택
-            <input type="file" accept="image/*" onChange={onFileChange} hidden />
-          </label>
-        </div>
-      )}
-
-      {/* 이미지 선택 후 편집 중 */}
-      {imageSrc && !croppedImage && (
-        <div className="editor-section">
-          <div className="cropper-container">
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={aspect}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-              // [UI 커스텀 포인트] 내부 스타일 수정
-              style={{
-                containerStyle: { background: '#222' },
-                cropAreaStyle: { border: '2px solid #fff' } 
-              }}
-            />
-          </div>
-
-          {/* [UI 커스텀 포인트] 하단 컨트롤 바 */}
-          <div className="controls">
-            {/* 비율 선택 */}
-            <div className="aspect-selector">
-              <span>비율</span>
-              <div className="aspect-buttons">
-                {aspectRatios.map((ratio) => (
-                  <button
-                    key={ratio.label}
-                    className={`aspect-btn ${aspect === ratio.value ? 'active' : ''}`}
-                    onClick={() => setAspect(ratio.value)}
-                  >
-                    <div 
-                      className="aspect-shape"
-                      style={{
-                        width: `${ratio.width}px`,
-                        height: `${ratio.height}px`,
-                      }}
+      {/* 1. 템플릿 선택 모드 */}
+      {mode === 'template-select' && (
+        <div className="template-select-section">
+          <h1>그리드 레이아웃 선택</h1>
+          <p>원하는 레이아웃을 선택하세요</p>
+          <div className="template-grid">
+            {TEMPLATES.map((template) => (
+              <div
+                key={template.id}
+                className="template-card"
+                onClick={() => handleTemplateSelect(template)}
+              >
+                <div
+                  className="template-preview"
+                  style={{
+                    display: 'grid',
+                    gridTemplateAreas: template.cssGridTemplate,
+                    gridTemplateColumns: template.cssGridColumns,
+                    gridTemplateRows: template.cssGridRows,
+                    gap: '4px',
+                  }}
+                >
+                  {template.slots.map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="template-slot"
+                      style={{ gridArea: slot.gridArea }}
                     />
-                    <span className="aspect-label">{ratio.label}</span>
-                  </button>
-                ))}
+                  ))}
+                </div>
+                <p className="template-name">{template.name}</p>
               </div>
-            </div>
-
-            <div className="zoom-slider">
-              <span>Zoom</span>
-              <input
-                type="range"
-                value={zoom}
-                min={1}
-                max={3}
-                step={0.1}
-                onChange={(e) => setZoom(Number(e.target.value))}
-              />
-            </div>
-            <div className="button-group">
-              <button className="btn-cancel" onClick={() => setImageSrc(null)}>취소</button>
-              <button className="btn-save" onClick={handleSave}>편집 완료</button>
-            </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* 편집 완료 후 결과물 확인 */}
-      {croppedImage && (
-        <div className="result-section">
-          <h2>편집 완료!</h2>
-          <div className="result-preview">
-            <img src={croppedImage} alt="Result" />
+      {/* 2. 편집 모드 */}
+      {mode === 'editor' && selectedTemplate && (
+        <div className="editor-section">
+          <div className="editor-header">
+            <div>
+              <h2>{selectedTemplate.name}</h2>
+              <p>각 칸을 클릭하여 이미지를 추가하세요</p>
+            </div>
+            <button className="btn-text" onClick={handleReset}>
+              템플릿 변경
+            </button>
           </div>
-          <button className="btn-save" onClick={() => setCroppedImage(null)}>다시 수정</button>
+
+          <div
+            className="editor-grid"
+            style={{
+              gridTemplateAreas: selectedTemplate.cssGridTemplate,
+              gridTemplateColumns: selectedTemplate.cssGridColumns,
+              gridTemplateRows: selectedTemplate.cssGridRows,
+            }}
+          >
+            {selectedTemplate.slots.map((slotConfig, index) => (
+              <SlotItem
+                key={slotConfig.id}
+                slotConfig={slotConfig}
+                slotData={slotsData[index]}
+                onClick={() => handleSlotClick(index)}
+              />
+            ))}
+          </div>
+
+          <div className="editor-actions">
+            <button 
+              className="btn-preview" 
+              onClick={handlePreview}
+              disabled={!allSlotsFilled}
+            >
+              미리보기
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* 3. 뷰어 모드 */}
+      {mode === 'viewer' && selectedTemplate && (
+        <div className="viewer-section">
+          <div className="viewer-header">
+            <h2>완성된 그리드</h2>
+            <div className="viewer-actions">
+              <button className="btn-secondary" onClick={handleBackToEdit}>
+                편집으로 돌아가기
+              </button>
+              <button className="btn-primary" onClick={handleReset}>
+                새로 만들기
+              </button>
+            </div>
+          </div>
+
+          <ResultGrid
+            template={selectedTemplate}
+            slotsData={slotsData}
+            onImageClick={handleImageClick}
+          />
+        </div>
+      )}
+
+      {/* 편집 모달 */}
+      {editingSlotIndex !== null && selectedTemplate && (
+        <EditorModal
+          slotData={slotsData[editingSlotIndex]}
+          aspectRatio={selectedTemplate.slots[editingSlotIndex].ratio}
+          onSave={handleSlotSave}
+          onCancel={handleModalCancel}
+        />
+      )}
+
+      {/* 갤러리 모달 */}
+      {galleryIndex !== null && (
+        <GalleryModal
+          images={slotsData.map((slot) => 
+            slot.croppedAreaPixels && slot.imageSrc ? slot.imageSrc : null
+          )}
+          currentIndex={galleryIndex}
+          isOpen={true}
+          onClose={handleGalleryClose}
+        />
       )}
     </div>
   );
