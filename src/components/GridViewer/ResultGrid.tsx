@@ -14,7 +14,7 @@ const ResultSlotItem: React.FC<{
   slotData: GridSlotData;
   onClick: () => void;
   ratio: number;
-}> = ({ slotData, onClick, _ratio }) => {
+}> = ({ slotData, onClick }) => {
   const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
 
   useEffect(() => {

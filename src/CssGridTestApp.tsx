@@ -1,5 +1,5 @@
 // src/CssGridTestApp.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { TEMPLATES } from './templates';
 import { type Template, type GridSlotData } from './types';
 import { GridTestSlotItem } from './components/CssGridTest/GridTestSlotItem';

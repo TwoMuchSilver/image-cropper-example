@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { TEMPLATES } from './templates';
 import { type Template, type GridSlotData } from './types';
 import { EditorModal } from './components/GridEditor/EditorModal';

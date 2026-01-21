@@ -54,7 +54,7 @@ export const GridTestEditorModal: React.FC<EditorModalProps> = ({
         crop,
         zoom,
         croppedArea,       // 핵심: CSS 렌더링용 퍼센트 좌표
-        croppedAreaPixels  // 필요시 사용
+        croppedAreaPixels: croppedAreaPixels ?? undefined  // 필요시 사용
       });
     }
   };
