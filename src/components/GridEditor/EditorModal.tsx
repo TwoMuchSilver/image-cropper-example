@@ -20,6 +20,9 @@ export const EditorModal: React.FC<EditorModalProps> = ({
   const [imageSrc, setImageSrc] = useState<string | null>(slotData.imageSrc);
   const [crop, setCrop] = useState(slotData.crop);
   const [zoom, setZoom] = useState(slotData.zoom);
+  const [croppedArea, setCroppedArea] = useState<Area | null>(
+    slotData.croppedArea || null
+  );
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(
     slotData.croppedAreaPixels || null
   );
@@ -37,18 +40,20 @@ export const EditorModal: React.FC<EditorModalProps> = ({
   };
 
   // 크롭 영역 계산 완료 시 호출
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedArea(croppedArea);
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
   // 저장 버튼 클릭
   const handleSave = () => {
-    if (imageSrc && croppedAreaPixels) {
+    if (imageSrc && croppedArea && croppedAreaPixels) {
       onSave({
         ...slotData,
         imageSrc,
         crop,
         zoom,
+        croppedArea,
         croppedAreaPixels
       });
     }
@@ -118,7 +123,7 @@ export const EditorModal: React.FC<EditorModalProps> = ({
           <button 
             className="btn-save" 
             onClick={handleSave}
-            disabled={!imageSrc || !croppedAreaPixels}
+            disabled={!imageSrc || !croppedArea}
           >
             저장
           </button>

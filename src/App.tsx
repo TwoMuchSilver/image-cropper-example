@@ -6,30 +6,21 @@ import { EditorModal } from './components/GridEditor/EditorModal';
 import { SlotItem } from './components/GridEditor/SlotItem';
 import { ResultGrid } from './components/GridViewer/ResultGrid';
 import { GalleryModal } from './components/GridViewer/GalleryModal';
+import { CssGridTestApp } from './CssGridTestApp'; // 새로 만든 테스트 앱
 import './App.css';
 
 type AppMode = 'template-select' | 'editor' | 'viewer';
 
-const App = () => {
-  // 현재 모드
+// 기존 App 컴포넌트 (Canvas 기반 롤백됨)
+const OriginalApp = () => {
   const [mode, setMode] = useState<AppMode>('template-select');
-  
-  // 선택된 템플릿
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  
-  // 각 슬롯의 데이터
   const [slotsData, setSlotsData] = useState<GridSlotData[]>([]);
-  
-  // 편집 중인 슬롯 인덱스
   const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
-  
-  // 갤러리 모달 상태
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
-  // 템플릿 선택 핸들러
   const handleTemplateSelect = (template: Template) => {
     setSelectedTemplate(template);
-    // 템플릿의 슬롯 개수만큼 빈 데이터 초기화
     setSlotsData(
       template.slots.map((slot) => ({
         id: slot.id,
@@ -41,12 +32,10 @@ const App = () => {
     setMode('editor');
   };
 
-  // 슬롯 클릭 핸들러 (편집 모달 열기)
   const handleSlotClick = (index: number) => {
     setEditingSlotIndex(index);
   };
 
-  // 슬롯 데이터 저장 핸들러
   const handleSlotSave = (updatedSlot: GridSlotData) => {
     if (editingSlotIndex !== null) {
       const newSlotsData = [...slotsData];
@@ -56,47 +45,39 @@ const App = () => {
     }
   };
 
-  // 편집 모달 닫기
   const handleModalCancel = () => {
     setEditingSlotIndex(null);
   };
 
-  // 뷰어 모드로 전환
   const handlePreview = () => {
     setMode('viewer');
   };
 
-  // 편집 모드로 돌아가기
   const handleBackToEdit = () => {
     setMode('editor');
   };
 
-  // 템플릿 선택으로 돌아가기
   const handleReset = () => {
     setMode('template-select');
     setSelectedTemplate(null);
     setSlotsData([]);
   };
 
-  // 갤러리 열기
   const handleImageClick = (index: number) => {
     setGalleryIndex(index);
   };
 
-  // 갤러리 닫기
   const handleGalleryClose = () => {
     setGalleryIndex(null);
   };
 
-  // 모든 슬롯에 이미지가 있는지 확인
   const allSlotsFilled = slotsData.every((slot) => slot.imageSrc !== null);
 
   return (
     <div className="container">
-      {/* 1. 템플릿 선택 모드 */}
       {mode === 'template-select' && (
         <div className="template-select-section">
-          <h1>그리드 레이아웃 선택</h1>
+          <h1>그리드 레이아웃 선택 (Canvas 방식)</h1>
           <p>원하는 레이아웃을 선택하세요</p>
           <div className="template-grid">
             {TEMPLATES.map((template) => (
@@ -130,7 +111,6 @@ const App = () => {
         </div>
       )}
 
-      {/* 2. 편집 모드 */}
       {mode === 'editor' && selectedTemplate && (
         <div className="editor-section">
           <div className="editor-header">
@@ -173,7 +153,6 @@ const App = () => {
         </div>
       )}
 
-      {/* 3. 뷰어 모드 */}
       {mode === 'viewer' && selectedTemplate && (
         <div className="viewer-section">
           <div className="viewer-header">
@@ -196,7 +175,6 @@ const App = () => {
         </div>
       )}
 
-      {/* 편집 모달 */}
       {editingSlotIndex !== null && selectedTemplate && (
         <EditorModal
           slotData={slotsData[editingSlotIndex]}
@@ -206,17 +184,63 @@ const App = () => {
         />
       )}
 
-      {/* 갤러리 모달 */}
       {galleryIndex !== null && (
         <GalleryModal
           images={slotsData.map((slot) => 
-            slot.croppedAreaPixels && slot.imageSrc ? slot.imageSrc : null
+            slot.imageSrc // Canvas 방식은 원본을 보여주거나, 필요 시 crop된 이미지를 보여줄 수 있음
           )}
           currentIndex={galleryIndex}
           isOpen={true}
           onClose={handleGalleryClose}
         />
       )}
+    </div>
+  );
+};
+
+// 메인 래퍼 컴포넌트
+const App = () => {
+  // 기본값을 false(기존 버전)로 할지 true(새 버전)로 할지 결정
+  // 사용자가 "새롭게 만들어보자"고 했으므로 새 버전을 기본으로 보여주는 게 좋을 수도 있지만,
+  // 롤백도 요청했으므로 토글을 제공합니다.
+  const [useTestMode, setUseTestMode] = useState(true);
+
+  return (
+    <div>
+      <div style={{
+        padding: '12px',
+        background: '#222',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        gap: '30px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 9999
+      }}>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '8px' }}>
+          <input 
+            type="radio" 
+            name="mode" 
+            checked={!useTestMode} 
+            onChange={() => setUseTestMode(false)} 
+          />
+          Original (Canvas Rollback)
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '8px' }}>
+          <input 
+            type="radio" 
+            name="mode" 
+            checked={useTestMode} 
+            onChange={() => setUseTestMode(true)} 
+          />
+          <span style={{ color: '#4da6ff', fontWeight: 'bold' }}>New CSS Grid Test</span>
+        </label>
+      </div>
+
+      <div style={{ padding: '20px' }}>
+        {useTestMode ? <CssGridTestApp /> : <OriginalApp />}
+      </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 // src/components/GridEditor/SlotItem.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { type GridSlotData, type GridSlotConfig } from '../../types';
+import { getCroppedImg } from '../../canvasUtils';
 import './SlotItem.css';
 
 interface SlotItemProps {
@@ -14,20 +15,47 @@ export const SlotItem: React.FC<SlotItemProps> = ({
   slotData,
   onClick
 }) => {
+  const { imageSrc, croppedAreaPixels } = slotData;
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null);
+
+  // Canvas를 사용하여 크롭된 이미지 생성 (롤백)
+  useEffect(() => {
+    const generateCroppedImage = async () => {
+      if (imageSrc && croppedAreaPixels) {
+        try {
+          const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+          setCroppedImageUrl(croppedImage);
+        } catch (e) {
+          console.error(e);
+          setCroppedImageUrl(imageSrc); // 실패 시 원본
+        }
+      } else {
+        setCroppedImageUrl(imageSrc);
+      }
+    };
+    generateCroppedImage();
+  }, [imageSrc, croppedAreaPixels]);
+
   return (
     <div
       className="slot-item"
-      style={{ gridArea: slotConfig.gridArea }}
+      style={{ 
+        gridArea: slotConfig.gridArea,
+        aspectRatio: `${slotConfig.ratio}`,
+        height: 'auto'
+      }}
       onClick={onClick}
     >
-      {slotData.imageSrc ? (
+      {imageSrc ? (
         <div className="slot-image-container">
-          <div
+          <img
+            src={croppedImageUrl || imageSrc || ''}
+            alt="Slot"
             className="slot-image"
-            style={{
-              backgroundImage: `url(${slotData.imageSrc})`,
-              backgroundPosition: `${slotData.crop.x}% ${slotData.crop.y}%`,
-              backgroundSize: `${slotData.zoom * 100}%`,
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover' // Canvas로 이미 잘린 이미지를 꽉 채움
             }}
           />
           <div className="slot-edit-overlay">

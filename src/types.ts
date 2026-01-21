@@ -8,6 +8,8 @@ export interface GridSlotData {
   imageSrc: string | null;
   crop: { x: number; y: number };
   zoom: number;
+  // CSS 렌더링을 위한 백분율 기반 크롭 영역
+  croppedArea?: { x: number; y: number; width: number; height: number };
   // croppedAreaPixels는 필요 시 저장 (서버 전송용)
   croppedAreaPixels?: { x: number; y: number; width: number; height: number };
 }

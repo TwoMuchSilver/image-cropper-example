@@ -10,7 +10,7 @@ export const TEMPLATES: Template[] = [
       "bottom"
     `,
     cssGridColumns: '1fr',
-    cssGridRows: '1fr 1fr',
+    cssGridRows: 'auto auto', // 1fr -> auto 변경
     slots: [
       { id: 'top', ratio: 16 / 9, gridArea: 'top' },
       { id: 'bottom', ratio: 16 / 9, gridArea: 'bottom' },
@@ -24,7 +24,7 @@ export const TEMPLATES: Template[] = [
       "left right"
     `,
     cssGridColumns: '1fr 1fr',
-    cssGridRows: '2fr 1fr',
+    cssGridRows: 'auto auto', // 2fr 1fr -> auto auto 변경 (핵심 수정)
     slots: [
       { id: 'header', ratio: 2 / 1, gridArea: 'header' },
       { id: 'left', ratio: 3 / 4, gridArea: 'left' },
@@ -40,7 +40,7 @@ export const TEMPLATES: Template[] = [
       "third"
     `,
     cssGridColumns: '1fr',
-    cssGridRows: '1fr 1fr 1fr',
+    cssGridRows: 'auto auto auto', // 1fr -> auto 변경
     slots: [
       { id: 'first', ratio: 4 / 3, gridArea: 'first' },
       { id: 'second', ratio: 4 / 3, gridArea: 'second' },
@@ -55,7 +55,7 @@ export const TEMPLATES: Template[] = [
       "bottomleft bottomright"
     `,
     cssGridColumns: '1fr 1fr',
-    cssGridRows: '1fr 1fr',
+    cssGridRows: 'auto auto', // 1fr -> auto 변경
     slots: [
       { id: 'topleft', ratio: 1, gridArea: 'topleft' },
       { id: 'topright', ratio: 1, gridArea: 'topright' },
@@ -70,7 +70,7 @@ export const TEMPLATES: Template[] = [
       "left right"
     `,
     cssGridColumns: '1fr 1fr',
-    cssGridRows: '1fr',
+    cssGridRows: 'auto', // 1fr -> auto 변경
     slots: [
       { id: 'left', ratio: 3 / 4, gridArea: 'left' },
       { id: 'right', ratio: 3 / 4, gridArea: 'right' },
